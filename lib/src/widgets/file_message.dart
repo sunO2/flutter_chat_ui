@@ -46,7 +46,7 @@ class FileMessage extends StatelessWidget {
                   : Image.asset(
                       'assets/icon-document.png',
                       color: _color,
-                      package: 'flutter_chat_ui',
+                      package: 'my_chat_ui',
                     ),
             ),
             Flexible(

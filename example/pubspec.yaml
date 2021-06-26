@@ -29,7 +29,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.3
   file_picker: ^3.0.2+2
-  flutter_chat_ui:
+  my_chat_ui:
     path: ../
   image_picker: ^0.8.0+3
   intl: ^0.17.0

@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:flutter_chat_ui/src/widgets/inherited_l10n.dart';
+import 'package:my_chat_ui/src/widgets/inherited_l10n.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import '../chat_l10n.dart';
@@ -23,6 +23,7 @@ class Chat extends StatefulWidget {
   const Chat({
     Key? key,
     this.buildCustomMessage,
+    this.buildListContentContain,
     this.customDateHeaderText,
     this.dateFormat,
     this.dateLocale,
@@ -48,7 +49,10 @@ class Chat extends StatefulWidget {
   }) : super(key: key);
 
   /// See [Message.buildCustomMessage]
-  final Widget Function(types.Message)? buildCustomMessage;
+  final Widget Function(types.Message,MessageContainBaseBuild)? buildCustomMessage;
+
+  /// 创建消息列表容器
+  final Widget Function(Widget chatList)? buildListContentContain;
 
   /// If [dateFormat], [dateLocale] and/or [timeFormat] is not enough to
   /// customize date headers in your case, use this to return an arbitrary
@@ -306,6 +310,16 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
+    final chatList = ChatList(
+      isLastPage: widget.isLastPage,
+      itemBuilder: (item, index) =>
+          _buildMessage(item),
+      items: _chatMessages,
+      onEndReached: widget.onEndReached,
+      onEndReachedThreshold:
+      widget.onEndReachedThreshold,
+    );
+
     return InheritedUser(
       user: widget.user,
       child: InheritedChatTheme(
@@ -339,15 +353,9 @@ class _ChatState extends State<Chat> {
                             : GestureDetector(
                                 onTap: () => FocusManager.instance.primaryFocus
                                     ?.unfocus(),
-                                child: ChatList(
-                                  isLastPage: widget.isLastPage,
-                                  itemBuilder: (item, index) =>
-                                      _buildMessage(item),
-                                  items: _chatMessages,
-                                  onEndReached: widget.onEndReached,
-                                  onEndReachedThreshold:
-                                      widget.onEndReachedThreshold,
-                                ),
+                                child: widget.buildListContentContain != null
+                                    ? widget.buildListContentContain!(chatList)
+                                    : chatList,
                               ),
                       ),
                       Input(

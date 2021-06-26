@@ -1,4 +1,4 @@
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:my_chat_ui/my_chat_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

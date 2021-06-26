@@ -10,6 +10,8 @@ import 'text_message.dart';
 /// Base widget for all message types in the chat. Renders bubbles around
 /// messages, delivery time and status. Sets maximum width for a message for
 /// a nice look on larger screens.
+typedef MessageContainBaseBuild = Widget Function(Widget widget);
+
 class Message extends StatelessWidget {
   /// Creates a particular message from any message type
   const Message({
@@ -29,7 +31,7 @@ class Message extends StatelessWidget {
   }) : super(key: key);
 
   /// Build a custom message inside predefined bubble
-  final Widget Function(types.Message)? buildCustomMessage;
+  final Widget Function(types.Message,MessageContainBaseBuild)? buildCustomMessage;
 
   /// Any message type
   final types.Message message;
@@ -96,11 +98,6 @@ class Message extends StatelessWidget {
 
   Widget _buildMessage() {
     switch (message.type) {
-      case types.MessageType.custom:
-        final customMessage = message as types.CustomMessage;
-        return buildCustomMessage != null
-            ? buildCustomMessage!(customMessage)
-            : const SizedBox();
       case types.MessageType.file:
         final fileMessage = message as types.FileMessage;
         return FileMessage(
@@ -125,6 +122,56 @@ class Message extends StatelessWidget {
     }
   }
 
+  Widget _buildMessageContain(Widget child){
+    return Builder(builder: (context){
+      final _messageBorderRadius =
+          InheritedChatTheme.of(context).theme.messageBorderRadius;
+
+      final _user = InheritedUser.of(context).user;
+      final _currentUserIsAuthor = _user.id == message.author.id;
+
+      final _borderRadius = BorderRadius.only(
+        bottomLeft: Radius.circular(_user.id == message.author.id || roundBorder
+            ? _messageBorderRadius
+            : 0),
+        bottomRight: Radius.circular(_user.id == message.author.id
+            ? roundBorder
+            ? _messageBorderRadius
+            : 0
+            : _messageBorderRadius),
+        topLeft: Radius.circular(_messageBorderRadius),
+        topRight: Radius.circular(_messageBorderRadius),
+      );
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: messageWidth.toDouble(),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onLongPress: () => onMessageLongPress?.call(message),
+              onTap: () => onMessageTap?.call(message),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: _borderRadius,
+                  color: !_currentUserIsAuthor ||
+                      message.type == types.MessageType.image
+                      ? InheritedChatTheme.of(context).theme.secondaryColor
+                      : InheritedChatTheme.of(context).theme.primaryColor,
+                ),
+                child: ClipRRect(
+                  borderRadius: _borderRadius,
+                  child: child,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   Widget _buildStatus(BuildContext context) {
     switch (message.status) {
       case types.Status.error:
@@ -133,7 +180,7 @@ class Message extends StatelessWidget {
             : Image.asset(
                 'assets/icon-error.png',
                 color: InheritedChatTheme.of(context).theme.errorColor,
-                package: 'flutter_chat_ui',
+                package: 'my_chat_ui',
               );
       case types.Status.sent:
       case types.Status.delivered:
@@ -142,7 +189,7 @@ class Message extends StatelessWidget {
             : Image.asset(
                 'assets/icon-delivered.png',
                 color: InheritedChatTheme.of(context).theme.primaryColor,
-                package: 'flutter_chat_ui',
+                package: 'my_chat_ui',
               );
       case types.Status.seen:
         return InheritedChatTheme.of(context).theme.seenIcon != null
@@ -150,7 +197,7 @@ class Message extends StatelessWidget {
             : Image.asset(
                 'assets/icon-seen.png',
                 color: InheritedChatTheme.of(context).theme.primaryColor,
-                package: 'flutter_chat_ui',
+                package: 'my_chat_ui',
               );
       case types.Status.sending:
         return Center(
@@ -174,22 +221,17 @@ class Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _user = InheritedUser.of(context).user;
-    final _messageBorderRadius =
-        InheritedChatTheme.of(context).theme.messageBorderRadius;
-    final _borderRadius = BorderRadius.only(
-      bottomLeft: Radius.circular(_user.id == message.author.id || roundBorder
-          ? _messageBorderRadius
-          : 0),
-      bottomRight: Radius.circular(_user.id == message.author.id
-          ? roundBorder
-              ? _messageBorderRadius
-              : 0
-          : _messageBorderRadius),
-      topLeft: Radius.circular(_messageBorderRadius),
-      topRight: Radius.circular(_messageBorderRadius),
-    );
     final _currentUserIsAuthor = _user.id == message.author.id;
-
+    Widget messageContain;
+    if(message.type != types.MessageType.custom ){
+      final buildMessage = _buildMessage();
+      messageContain = _buildMessageContain(buildMessage);
+    }else{
+      final customMessage = message as types.CustomMessage;
+      messageContain = buildCustomMessage != null
+      ? buildCustomMessage!(customMessage,_buildMessageContain)
+          : const SizedBox();
+    }
     return Container(
       alignment: _user.id == message.author.id
           ? Alignment.centerRight
@@ -203,33 +245,7 @@ class Message extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!_currentUserIsAuthor && showUserAvatars) _buildAvatar(context),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: messageWidth.toDouble(),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                GestureDetector(
-                  onLongPress: () => onMessageLongPress?.call(message),
-                  onTap: () => onMessageTap?.call(message),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: _borderRadius,
-                      color: !_currentUserIsAuthor ||
-                              message.type == types.MessageType.image
-                          ? InheritedChatTheme.of(context).theme.secondaryColor
-                          : InheritedChatTheme.of(context).theme.primaryColor,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: _borderRadius,
-                      child: _buildMessage(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          messageContain,
           if (_currentUserIsAuthor)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),

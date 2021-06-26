@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:my_chat_ui/my_chat_ui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mime/mime.dart';
@@ -178,7 +178,10 @@ class _ChatPageState extends State<ChatPage> {
     final messages = (jsonDecode(response) as List)
         .map((e) => types.Message.fromJson(e as Map<String, dynamic>))
         .toList();
-
+    messages.insert(0,types.CustomMessage(
+      author: _user,
+      id: "e7a673e9-86eb-4572-936f-2882b0183cde"
+    ));
     setState(() {
       _messages = messages;
     });
@@ -189,6 +192,14 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       body: Chat(
         messages: _messages,
+        buildCustomMessage: (_,contain){
+          return Expanded(
+            child: Align(
+              alignment: Alignment.center,
+              child: Text('哈哈哈哈啊'),
+            ),
+          );
+        },
         onAttachmentPressed: _handleAtachmentPressed,
         onMessageTap: _handleMessageTap,
         onPreviewDataFetched: _handlePreviewDataFetched,
