@@ -10,6 +10,7 @@ class ChatList extends StatefulWidget {
   const ChatList({
     Key? key,
     this.isLastPage,
+    this.buildListContentContain,
     required this.itemBuilder,
     required this.items,
     this.onEndReached,
@@ -26,6 +27,9 @@ class ChatList extends StatefulWidget {
 
   /// Item builder
   final Widget Function(Object, int? index) itemBuilder;
+
+  /// 创建消息列表容器
+  final Widget Function(Widget chatList)? buildListContentContain;
 
   /// Used for pagination (infinite scroll). Called when user scrolls
   /// to the very end of the list (minus [onEndReachedThreshold]).
@@ -174,6 +178,53 @@ class _ChatListState extends State<ChatList>
 
   @override
   Widget build(BuildContext context) {
+    Widget list = CustomScrollView(
+      controller: _scrollController,
+      reverse: true,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.only(bottom: 4),
+          sliver: SliverAnimatedList(
+            initialItemCount: widget.items.length,
+            key: _listKey,
+            itemBuilder: (_, index, animation) =>
+                _buildNewMessage(index, animation),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.only(
+            top: 16,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: SizeTransition(
+              axisAlignment: 1,
+              sizeFactor: _animation,
+              child: Center(
+                child: Container(
+                  alignment: Alignment.center,
+                  height: 32,
+                  width: 32,
+                  child: SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      backgroundColor: Colors.transparent,
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        InheritedChatTheme.of(context).theme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
+
+
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (widget.onEndReached == null || widget.isLastPage == true) {
@@ -204,50 +255,9 @@ class _ChatListState extends State<ChatList>
 
         return false;
       },
-      child: CustomScrollView(
-        controller: _scrollController,
-        reverse: true,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 4),
-            sliver: SliverAnimatedList(
-              initialItemCount: widget.items.length,
-              key: _listKey,
-              itemBuilder: (_, index, animation) =>
-                  _buildNewMessage(index, animation),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.only(
-              top: 16,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: SizeTransition(
-                axisAlignment: 1,
-                sizeFactor: _animation,
-                child: Center(
-                  child: Container(
-                    alignment: Alignment.center,
-                    height: 32,
-                    width: 32,
-                    child: SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        backgroundColor: Colors.transparent,
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          InheritedChatTheme.of(context).theme.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: widget.buildListContentContain != null
+          ? widget.buildListContentContain!(list)
+          :list
     );
   }
 }

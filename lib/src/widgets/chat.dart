@@ -312,6 +312,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     final chatList = ChatList(
       isLastPage: widget.isLastPage,
+      buildListContentContain: widget.buildListContentContain,
       itemBuilder: (item, index) =>
           _buildMessage(item),
       items: _chatMessages,
@@ -353,9 +354,7 @@ class _ChatState extends State<Chat> {
                             : GestureDetector(
                                 onTap: () => FocusManager.instance.primaryFocus
                                     ?.unfocus(),
-                                child: widget.buildListContentContain != null
-                                    ? widget.buildListContentContain!(chatList)
-                                    : chatList,
+                                child: chatList,
                               ),
                       ),
                       Input(
